@@ -26,7 +26,7 @@ let mainWindow;
 
 
 function createWindow() {
-    const iconPath = path.join(__dirname, 'assets', 'icon.iconset', 'Black White Professional Minimal Brand Logo.svg');
+    const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
     mainWindow = new BrowserWindow({
         icon: iconPath,
         width: 1400,
@@ -79,7 +79,7 @@ app.whenReady().then(() => {
     autoUpdater.checkForUpdatesAndNotify();
 
     // Set dock icon (macOS)
-    const iconPath = path.join(__dirname, 'assets', 'icon.iconset', 'Black White Professional Minimal Brand Logo.svg');
+    const iconPath = path.join(__dirname, '..', 'build', 'icon.png');
     if (process.platform === 'darwin') {
         const dockIcon = nativeImage.createFromPath(iconPath);
         if (!dockIcon.isEmpty()) {
