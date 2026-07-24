@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    window.onerror = function(msg, src, line) {
+      alert("Fatal JS Error: " + msg + " at line " + line);
+    };
+  </script>
+  <title>Aurora OS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- First Time Welcome Screen (Web Aesthetic) -->
+  <div id="welcome-screen" class="welcome-screen-web" style="opacity: 0; pointer-events: none;">
+    <div class="aurora-logo-glow" style="margin-bottom: 3rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 375" style="width: 250px; height: 250px;">
+        <defs>
+          <linearGradient id="auroraSplashGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%">
+              <animate attributeName="stop-color" values="#ff6b35;#8b5cf6;#c850c0;#ff6b35" dur="4s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="50%">
+              <animate attributeName="stop-color" values="#f7c59f;#c850c0;#ff6b35;#f7c59f" dur="4s" repeatCount="indefinite" />
+            </stop>
+            <stop offset="100%">
+              <animate attributeName="stop-color" values="#c850c0;#ff6b35;#8b5cf6;#c850c0" dur="4s" repeatCount="indefinite" />
+            </stop>
+          </linearGradient>
+        </defs>
+        <path d="M191.97 101.25L283.79 261.51C284.71 263.13 284.71 265.11 283.78 266.72C282.85 268.33 281.13 269.32 279.27 269.32H95.73C93.87 269.32 92.15 268.33 91.21 266.72C90.28 265.11 90.28 263.13 91.2 261.51L183.02 101.25C183.94 99.64 185.65 98.65 187.5 98.65C189.34 98.65 191.05 99.64 191.97 101.25Z" fill="none" stroke="url(#auroraSplashGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="187.5" cy="209.85" r="38.89" fill="none" stroke="url(#auroraSplashGrad)" stroke-width="14" stroke-linecap="round" />
+      </svg>
+    </div>
+    
+    <button id="btn-welcome-start" class="aurora-download-btn">
+      Get Started
+      <span class="aurora-glow-ring"></span>
+    </button>
+  </div>
+
+  <!-- Browser Tour Overlay (Just the dark background) -->
+  <div id="tour-overlay" class="tour-overlay hidden"></div>
+
+  <!-- Bouncing Up Arrow -->
+  <div id="tour-arrow-up" class="tour-arrow hidden" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+    <span style="color: var(--aurora-blue); font-weight: bold; font-size: 16px; text-shadow: 0 0 10px rgba(10,132,255,0.5);">Hover Here</span>
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--aurora-blue)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 10px rgba(10,132,255,0.8));">
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  </div>
+  
+  <div id="tour-popover" class="tour-popover hidden">
+    <div id="tour-text" class="tour-text"></div>
+    <div class="tour-actions">
+      <button id="btn-tour-next" class="btn-primary">Next</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <!-- Floating Navigation Pill -->
+    <div id="floating-pill" class="floating-pill">
+      <!-- Standard Dock Content -->
+      <div class="pill-dock-content" id="pill-dock-content">
+        <button class="pill-btn" id="btn-topbar-toggle" data-title="Tabs">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="8" x2="21" y2="8"></line>
+          </svg>
+        </button>
+        <div class="pill-divider"></div>
+        <button class="pill-btn" id="btn-back" data-title="Back">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button class="pill-btn" id="btn-forward" data-title="Forward">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+        <div class="pill-divider"></div>
+        <button class="pill-btn" id="btn-search-trigger" data-title="Aurora AI">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        <button class="pill-btn" id="btn-agents" data-title="Aurora Instincts">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="instincts-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#98f3ff"/>
+                <stop offset="100%" stop-color="#64b8ff"/>
+              </linearGradient>
+            </defs>
+            <path d="M12 2 L13.8 9.5 Q14.1 10.8 15.5 11.1 L22 12 L15.5 12.9 Q14.1 13.2 13.8 14.5 L12 22 L10.2 14.5 Q9.9 13.2 8.5 12.9 L2 12 L8.5 11.1 Q9.9 10.8 10.2 9.5 Z" fill="url(#instincts-grad)" opacity="0.95"/>
+            <path d="M19 3 L19.6 5.2 L22 5.8 L19.6 6.4 L19 8.6 L18.4 6.4 L16 5.8 L18.4 5.2 Z" fill="url(#instincts-grad)" opacity="0.7"/>
+          </svg>
+        </button>
+        <button class="pill-btn" id="btn-hub" data-title="Apps & History">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Overview Popup Balloon (Appears above dock) -->
+    <div id="ai-dock-response-popup" class="ai-dock-response-popup">
+      <div class="ai-popup-content" id="ai-popup-content"></div>
+      <div class="ai-dock-input-wrapper">
+        <input type="text" id="ai-dock-input" class="ai-dock-input" placeholder="Ask Aurora AI to do something on this page..." autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <!-- Top Pill-Bar (Tabs) -->
+    <div id="top-pill-bar-zone" class="top-pill-bar-zone"></div>
+    <div id="top-pill-bar" class="top-pill-bar hidden-bar">
+      <div class="pill-tabs-container" id="tabs-container"></div>
+      <button class="pill-new-tab-btn" id="btn-new-tab" title="New Tab">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Omni-Search Command Palette Overlay -->
+    <div id="omni-search-overlay" class="omni-search-overlay hidden">
+      <div class="omni-search-container">
+        <div class="omni-input-wrapper">
+          <svg class="omni-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="omni-address-input" class="omni-input" placeholder="Search or type a URL..." autocomplete="off" spellcheck="false" />
+        </div>
+        <div id="omni-suggestions" class="omni-suggestions"></div>
+      </div>
+    </div>
+
+
+    <!-- App Body: browser + sidebar side by side -->
+    <div class="app-body">
+      <div class="main-container">
+        <div id="desktop-overlay"></div>
+        <div id="browser-content" class="browser-content">
+          <div id="welcome-page" class="welcome-page">
+            <div class="aurora-home-centered" id="home-layout-container">
+              <div class="search-section-wrapper" id="search-section-wrapper">
+              <div class="orb-wave-wrapper">
+                <button class="ai-orb-centered" id="btn-welcome-ai" title="Aurora AI Mode">
+                  <svg class="aurora-ai-icon" width="60" height="60" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <defs>
+                      <linearGradient id="auroraAiCenterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7ce7ff">
+                          <animate attributeName="stop-color" values="#7ce7ff;#64b8ff;#98f3ff;#7ce7ff" dur="2.2s" repeatCount="indefinite" />
+                        </stop>
+                        <stop offset="100%" stop-color="#64b8ff">
+                          <animate attributeName="stop-color" values="#64b8ff;#7ce7ff;#4a8dff;#64b8ff" dur="2.2s" repeatCount="indefinite" />
+                        </stop>
+                      </linearGradient>
+                    </defs>
+                    <path d="M50 17L16 84H84L50 17Z" stroke="url(#auroraAiCenterGrad)" stroke-width="4" stroke-linejoin="round" />
+                    <circle cx="50" cy="59" r="10" stroke="url(#auroraAiCenterGrad)" stroke-width="4" />
+                  </svg>
+                </button>
+                
+                <!-- Inline Voice Wave -->
+                <div id="voice-wave-container" class="voice-wave-container hidden">
+                  <div id="voice-wave-canvas" class="voice-wave-canvas"></div>
+                </div>
+              </div>
+
+              <div class="welcome-search-box" id="welcome-search-container">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity: 0.5;">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="welcome-search-input" placeholder="Search the web..." autocomplete="off">
+              </div>
+              </div>
+
+              <!-- Inline Apps Hub -->
+              <div id="home-apps-hub" class="home-apps-hub"></div>
+              
+              <!-- Skills Hub (Coming Soon) -->
+              <div id="home-agents-hub" class="home-agents-hub">
+                <div class="agents-header">
+                  <div class="skills-header-row">
+                    <div class="skills-title-group">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+                        <defs>
+                          <linearGradient id="instincts-hdr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#98f3ff"/>
+                            <stop offset="100%" stop-color="#64b8ff"/>
+                          </linearGradient>
+                        </defs>
+                        <path d="M12 2 L13.8 9.5 Q14.1 10.8 15.5 11.1 L22 12 L15.5 12.9 Q14.1 13.2 13.8 14.5 L12 22 L10.2 14.5 Q9.9 13.2 8.5 12.9 L2 12 L8.5 11.1 Q9.9 10.8 10.2 9.5 Z" fill="url(#instincts-hdr-grad)"/>
+                        <path d="M19.5 2.5 L20 4.5 L22 5 L20 5.5 L19.5 7.5 L19 5.5 L17 5 L19 4.5 Z" fill="url(#instincts-hdr-grad)" opacity="0.8"/>
+                      </svg>
+                      <span class="skills-label">Aurora Instincts</span>
+                      <span class="skills-coming-soon-badge">Coming Soon</span>
+                    </div>
+                    <p class="skills-description">Instincts are built-in capabilities that let Aurora take action for you — booking tickets, tracking prices, filling forms, and more.</p>
+                  </div>
+                </div>
+
+                <div class="agents-grid" id="agents-grid">
+                  <!-- Agents will be dynamically rendered here -->
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- APPS & HISTORY HUB -->
+      <div id="sidebar" class="right-sidebar hidden">
+        <div class="sidebar-resize-handle" id="sidebar-resize-handle"></div>
+        <div class="sidebar-header">
+          <h3>Apps & History</h3>
+          <div class="sidebar-header-actions">
+            <button class="action-btn" id="close-sidebar" title="Close">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-content" style="padding: 12px; display: flex; flex-direction: column; gap: 24px;">
+
+          <!-- Apps Section -->
+          <div>
+            <h4 style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-left: 4px;">My Apps</h4>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div class="app-icon-item" data-url="https://youtube.com" style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
+                <div style="width: 48px; height: 48px; background: #FF0000; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">Y</div>
+                <span style="font-size: 11px; color: rgba(255,255,255,0.7);">YouTube</span>
+              </div>
+              <div class="app-icon-item" data-url="https://chatgpt.com" style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
+                <div style="width: 48px; height: 48px; background: #10A37F; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">CG</div>
+                <span style="font-size: 11px; color: rgba(255,255,255,0.7);">ChatGPT</span>
+              </div>
+              <div class="app-icon-item" data-url="https://gmail.com" style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
+                <div style="width: 48px; height: 48px; background: #EA4335; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">M</div>
+                <span style="font-size: 11px; color: rgba(255,255,255,0.7);">Gmail</span>
+              </div>
+              <div class="app-icon-item" data-url="https://github.com" style="display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer;">
+                <div style="width: 48px; height: 48px; background: #24292E; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px;">GH</div>
+                <span style="font-size: 11px; color: rgba(255,255,255,0.7);">GitHub</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Section -->
+          <div style="flex: 1;">
+            <h4 style="color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; margin-left: 4px;">Recent History</h4>
+            <div id="history-list" style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="history-item" style="display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+                <div style="width: 24px; height: 24px; background: rgba(255,255,255,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                  <span style="font-size: 13px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">"top AI startups"</span>
+                  <span style="font-size: 11px; color: rgba(255,255,255,0.5);">Search</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- AURORA AI — Dedicated Side Panel -->
+      <div id="ai-panel" class="right-sidebar ai-panel hidden">
+        <div class="sidebar-header">
+          <h3>Aurora AI</h3>
+          <div class="sidebar-header-actions">
+            <button class="action-btn" id="close-ai-panel" title="Close">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="sidebar-content ai-panel-content">
+          <div class="ai-panel-shell">
+            <div class="ai-assistant-card">
+              <div class="ai-assistant-head">
+                <div class="ai-brand">
+                  <div class="ai-brand-logo">
+                    <svg width="28" height="28" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                      <defs>
+                        <linearGradient id="auroraAiPanelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stop-color="#86d7ff">
+                            <animate attributeName="stop-color" values="#86d7ff;#8ea3ff;#9df3ff;#86d7ff" dur="2.3s"
+                              repeatCount="indefinite" />
+                          </stop>
+                          <stop offset="100%" stop-color="#8ea3ff">
+                            <animate attributeName="stop-color" values="#8ea3ff;#86d7ff;#79b7ff;#8ea3ff" dur="2.3s"
+                              repeatCount="indefinite" />
+                          </stop>
+                        </linearGradient>
+                      </defs>
+                      <path d="M50 15L15 85H85L50 15Z" stroke="url(#auroraAiPanelGrad)" stroke-width="7.5" />
+                      <circle cx="50" cy="58" r="10" stroke="url(#auroraAiPanelGrad)" stroke-width="7.5" />
+                    </svg>
+                  </div>
+                  <div class="ai-brand-copy">
+                    <div class="ai-brand-title">Aurora AI</div>
+                    <div class="ai-brand-sub">Personal browser copilot</div>
+                  </div>
+                </div>
+                <button type="button" class="ai-stop-btn" id="ai-stop-btn">Stop Agent</button>
+              </div>
+              <p class="ai-card-copy" id="ai-card-copy">Tell Aurora what to do. It can plan and run browser steps across
+                tabs.</p>
+              <div class="ai-quick-row">
+                <button type="button" class="ai-quick-btn"
+                  data-ai-prompt="Summarize all open tabs in one line each">Summarize Tabs</button>
+                <button type="button" class="ai-quick-btn"
+                  data-ai-prompt="Research top AI startups and open 5 useful sources">Research</button>
+                <button type="button" class="ai-quick-btn"
+                  data-ai-prompt="Find top investors in India and open sources plus a Google Sheet">Sheets Task</button>
+              </div>
+            </div>
+            <div class="ai-empty-state" id="ai-empty-state">
+              <div class="ai-empty-logo">
+                <svg width="34" height="34" viewBox="0 0 100 100" fill="none">
+                  <path d="M50 15L15 85H85L50 15Z" stroke="#E8F6FF" stroke-width="7.5" />
+                  <circle cx="50" cy="58" r="10" stroke="#E8F6FF" stroke-width="7.5" />
+                </svg>
+              </div>
+              <h2 class="ai-empty-title">How can Aurora help?</h2>
+              <p class="ai-empty-sub">Ask anything, or choose a starter action.</p>
+              <div class="ai-empty-actions">
+                <button type="button" class="ai-quick-btn" data-ai-prompt="Create a plan from the current tab">Make a
+                  Plan</button>
+                <button type="button" class="ai-quick-btn" data-ai-prompt="Summarize this page and key links">Summarize
+                  Page</button>
+                <button type="button" class="ai-quick-btn" data-ai-prompt="Open Gmail and YouTube in two tabs">Open
+                  Apps</button>
+              </div>
+            </div>
+            <!-- Conversational Chat Area -->
+            <div class="ai-chat-history hidden" id="ai-chat-history"></div>
+            <!-- Autonomous Agent Log Area -->
+            <div class="ai-log hidden" id="ai-log"></div>
+
+            <div class="ai-approval-modal hidden" id="ai-approval-modal">
+              <div class="ai-approval-content">
+                <h4 id="ai-approval-title">Approval Required</h4>
+                <p id="ai-approval-summary"></p>
+                <div class="ai-approval-actions">
+                  <button class="ai-btn-deny" id="ai-btn-deny">Deny</button>
+                  <button class="ai-btn-approve" id="ai-btn-approve">Approve</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Siri Wave UI Container — transparent, full width, above the composer -->
+            <div id="siri-wave-container" class="hidden" style="position: absolute; bottom: 72px; left: 0; right: 0; height: 90px; z-index: 100; pointer-events: none; overflow: hidden;"></div>
+
+            <div class="ai-composer">
+              <button type="button" class="ai-attach-btn" id="ai-attach-btn" title="Attach file">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+              </button>
+              <button type="button" class="ai-mic-btn" id="ai-mic-btn" title="Voice Chat">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+              <input class="ai-input" id="ai-input" type="text" placeholder="Ask Aurora AI anything…" />
+
+              <button type="button" class="ai-send-btn" id="ai-send-btn" title="Send">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 2L11 13"></path>
+                  <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end app-body -->
+
+
+    <!-- Resize overlay (covers webview during sidebar drag) -->
+    <div id="resize-overlay"></div>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen">
+      <div class="splash-content">
+        <div class="splash-logo">
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="none">
+            <path d="M50 15L15 85H85L50 15Z" stroke="#FFF" stroke-width="4" />
+            <circle cx="50" cy="58" r="10" stroke="#FFF" stroke-width="4" />
+          </svg>
+        </div>
+        <div class="splash-title">AURORA OS</div>
+        <div class="splash-loader"></div>
+      </div>
+    </div>
+
+    <!-- BENTO GRID OVERLAY (Hidden by default) -->
+    <div id="bento-grid-overlay" class="bento-overlay hidden">
+      <div class="bento-container">
+        <!-- Chuks AI -->
+        <div class="bento-item large" data-url="aurora://insurance">
+          <div class="bento-icon">
+            <img src="assets/chuks-icon.webp" alt="Chuks AI"
+              style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: screen;">
+          </div>
+          <div class="bento-desc">Insurance Agent</div>
+        </div>
+
+        <!-- Wallet -->
+        <div class="bento-item" data-url="aurora://wallet">
+          <div class="bento-icon" style="background: rgba(191, 90, 242, 0.2); color: #BF5AF2;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+          </div>
+          <div class="bento-label">Wallet</div>
+        </div>
+
+        <!-- Banking -->
+        <div class="bento-item" data-url="aurora://banking">
+          <div class="bento-icon" style="background: rgba(52, 199, 89, 0.2); color: #34C759;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"></path>
+            </svg>
+          </div>
+          <div class="bento-label">Banking</div>
+        </div>
+
+        <!-- Health -->
+        <div class="bento-item" data-url="aurora://health">
+          <div class="bento-icon" style="background: rgba(255, 59, 48, 0.2); color: #FF3B30;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+          </div>
+          <div class="bento-label">Health</div>
+        </div>
+
+        <!-- Shop -->
+        <!-- 21st.dev Glass Calendar Replica -->
+        <div class="bento-item calendar-widget" data-url="">
+
+          <!-- Header: Toggle & Settings -->
+          <div class="glass-cal-header">
+            <div class="cal-toggle">
+              <span class="toggle-item active" data-view="weekly">Weekly</span>
+              <span class="toggle-item" data-view="monthly">Monthly</span>
+            </div>
+            <div class="cal-settings-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.39a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                </path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Title: Month -->
+          <div class="glass-cal-title">
+            <h2 id="cal-month-name">February</h2>
+            <div class="cal-nav">
+              <button class="nav-arrow left" id="cal-nav-prev">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button class="nav-arrow right" id="cal-nav-next">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Grid: Days & Dates -->
+          <div class="glass-cal-grid">
+            <!-- Day Names -->
+            <div class="cal-row days-header">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <!-- Dates (Injected by JS) -->
+            <div class="cal-row dates-row" id="cal-dates-grid">
+              <!-- Example for layout check, JS will replace -->
+              <span class="prev-month">28</span>
+              <span>29</span>
+              <span>30</span>
+              <span class="today">1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="glass-cal-footer">
+            <div class="add-note">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <input type="text" id="cal-note-input" placeholder="Add a note..." />
+            </div>
+            <button class="new-event-btn" id="cal-new-event">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              New Event
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Identity -->
+        <div class="bento-item" data-url="aurora://identity">
+          <div class="bento-icon" style="background: rgba(100, 210, 255, 0.2); color: #64D2FF;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+          </div>
+          <div class="bento-label">Identity</div>
+        </div>
+
+      </div>
+      <button class="close-bento-btn" id="close-bento">✕</button>
+    </div>
+
+  </div>
+  <!-- Approval Modal -->
+  <div id="approval-modal" class="hidden"
+    style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+    <div
+      style="background: #1e1e24; border: 1px solid rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; width: 320px; text-align: center;">
+      <h3 style="margin-top: 0; color: #fff;">Approval Required</h3>
+      <p id="approval-msg" style="color: #ccc; font-size: 13px; margin: 15px 0;">The agent wants to perform an action.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="btn-approve"
+          style="background: #4ade80; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Approve</button>
+        <button id="btn-deny"
+          style="background: #ef4444; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Deny</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfer Modal & Passcode (Mock) -->
+  <div id="transfer-modal" class="hidden"
+    style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(48px); -webkit-backdrop-filter: blur(48px); opacity: 0; transition: opacity 0.3s ease;">
+    <style id="payment-card-styles">
+      #transfer-amount-input::-webkit-outer-spin-button,
+      #transfer-amount-input::-webkit-inner-spin-button {
+        -webkit-appearance: none !important;
+        display: none !important;
+        margin: 0;
+      }
+
+      #transfer-amount-input {
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+
+      .pc-container {
+        width: 440px;
+        margin: 0 auto;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        transform: translateY(20px);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .pc-perspective {
+        perspective: 1000px;
+        width: 100%;
+        height: 260px;
+      }
+
+      .pc-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.7s;
+        transform-style: preserve-3d;
+      }
+
+      .pc-card-inner.is-flipped {
+        transform: rotateY(180deg);
+      }
+
+      .pc-front,
+      .pc-back {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 12px;
+      }
+
+      .pc-back {
+        transform: rotateY(180deg);
+      }
+
+      .pc-liquid-card {
+        background: transparent;
+        border-radius: 16px;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.03), 0 2px 6px rgba(0, 0, 0, 0.08), inset 3px 3px 0.5px -3.5px rgba(255, 255, 255, 0.09), inset -3px -3px 0.5px -3.5px rgba(255, 255, 255, 0.85), inset 1px 1px 1px -0.5px rgba(255, 255, 255, 0.6), inset -1px -1px 1px -0.5px rgba(255, 255, 255, 0.6), inset 0 0 6px 6px rgba(255, 255, 255, 0.12), inset 0 0 2px 2px rgba(255, 255, 255, 0.06), 0 0 12px rgba(0, 0, 0, 0.15);
+        backdrop-filter: url(#container-glass) blur(5px) saturate(1.8);
+        color: white;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .pc-liquid-card-bg {
+        background: linear-gradient(to bottom right, #1e293b, #334155, #0f172a);
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: 16px;
+      }
+
+      .pc-form-container {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .pc-label {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 6px;
+        display: block;
+        color: #e2e8f0;
+      }
+
+      .pc-input {
+        width: 100%;
+        height: 40px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: white;
+        font-size: 16px;
+        box-sizing: border-box;
+        outline: none;
+        transition: all 0.2s;
+      }
+
+      .pc-input:focus {
+        border-color: rgba(16, 185, 129, 0.5);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+      }
+
+      .pc-input.font-mono {
+        font-family: monospace;
+      }
+
+      .pc-input.uppercase {
+        text-transform: uppercase;
+      }
+
+      .pc-btn {
+        width: 100%;
+        height: 44px;
+        border-radius: 8px;
+        background: transparent;
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        border: 0;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transform-style: preserve-3d;
+        transition: transform 0.3s;
+        margin-top: 16px;
+      }
+
+      .pc-btn:hover {
+        transform: scale(1.02);
+      }
+
+      .pc-btn-bg {
+        position: absolute;
+        inset: 0;
+        border-radius: 8px;
+        background: linear-gradient(to top, rgba(16, 185, 129, 1), rgba(16, 185, 129, 0.85));
+        border: 1px solid rgba(0, 0, 0, 0.4);
+        border-bottom-width: 2px;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        z-index: -1;
+      }
+
+      .pc-card-content {
+        padding: 24px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-sizing: border-box;
+      }
+
+      .pc-row {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .pc-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .pc-logo-chip {
+        width: 48px;
+        height: 32px;
+        background: linear-gradient(to right, #fbbf24, #d97706);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pc-logo-chip-inner {
+        width: 24px;
+        height: 16px;
+        background: #fcd34d;
+        border-radius: 12px;
+      }
+
+      .pc-text-xs {
+        font-size: 12px;
+        color: #cbd5e1;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .pc-text-lg {
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      .pc-text-2xl {
+        font-size: 26px;
+        font-weight: 600;
+        font-family: monospace;
+        letter-spacing: 0.05em;
+      }
+
+      .pc-text-right {
+        text-align: right;
+      }
+
+      .pc-magnetic-strip {
+        width: 100%;
+        height: 50px;
+        background: #000;
+        margin-top: 24px;
+      }
+
+      .pc-cvv-stripe {
+        background: white;
+        height: 40px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 0 12px;
+        color: black;
+        font-family: monospace;
+        font-size: 18px;
+      }
+
+      .pc-close-btn {
+        position: absolute;
+        top: -16px;
+        right: -56px;
+        width: 40px;
+        height: 40px;
+        background: rgba(30, 30, 36, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #fff;
+        cursor: pointer;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        backdrop-filter: blur(12px);
+        transition: all 0.2s;
+      }
+
+      .pc-close-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+      }
+
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+
+    <div id="transfer-modal-content" class="pc-container"
+      style="position: relative; max-height: 90vh; overflow-y: auto; padding: 24px 0; scrollbar-width: none;">
+
+      <!-- View 1: 21st.dev Component Form -->
+      <div id="transfer-view-details"
+        style="display: flex; flex-direction: column; gap: 24px; transition: opacity 0.3s, transform 0.3s; padding: 0 16px;">
+        <button class="pc-close-btn" id="btn-transfer-cancel"
+          style="position: absolute; top: 12px; right: 12px; z-index: 100;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Amount Input Header -->
+        <div
+          style="text-align: center; margin-bottom: 4px; margin-top: 24px; display: flex; flex-direction: column; align-items: center;">
+          <div style="display: flex; align-items: baseline; justify-content: center; gap: 4px; position: relative;">
+            <span style="font-size: 32px; font-weight: 600; color: #10b981; transform: translateY(-6px);">₦</span>
+            <input type="number" id="transfer-amount-input" placeholder="0"
+              style="background: transparent; border: none; outline: none; color: #fff; font-size: 56px; font-weight: 700; width: auto; max-width: 280px; text-align: left; padding: 0; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; min-width: 60px;" />
+          </div>
+          <div
+            style="font-size: 13px; color: rgba(255,255,255,0.4); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 4px;">
+            Available: <span id="transfer-available-balance">₦10,000,000.00</span></div>
+        </div>
+
+        <!-- NEW: Recipient Selection -->
+        <div
+          style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px; margin-bottom: 16px; padding: 0 12px;">
+          <div style="font-size: 14px; font-weight: 500; color: #a1a1aa;">To</div>
+          <input type="text" id="transfer-recipient-input" placeholder="Name, @cashtag, or email"
+            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; color: #fff; font-size: 16px; outline: none; transition: all 0.2s;"
+            onfocus="this.style.borderColor='#10b981'; this.style.background='rgba(16,185,129,0.05)';"
+            onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)';" />
+
+          <div style="display: flex; gap: 16px; margin-top: 8px; overflow-x: auto; padding-bottom: 8px;"
+            class="hide-scrollbar">
+            <!-- Contact Chips -->
+            <div class="contact-chip"
+              style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 60px; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+              <div
+                style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+                D</div>
+              <span style="font-size: 13px; color: #a1a1aa; font-weight: 500;">David</span>
+            </div>
+            <div class="contact-chip"
+              style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 60px; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+              <div
+                style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+                S</div>
+              <span style="font-size: 13px; color: #a1a1aa; font-weight: 500;">Sarah</span>
+            </div>
+            <div class="contact-chip"
+              style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 60px; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+              <div
+                style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+                M</div>
+              <span style="font-size: 13px; color: #a1a1aa; font-weight: 500;">Mike</span>
+            </div>
+            <div class="contact-chip"
+              style="display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 60px; transition: transform 0.2s;"
+              onmouseover="this.style.transform='scale(1.05)';" onmouseout="this.style.transform='scale(1)';">
+              <div
+                style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #be185d); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+                J</div>
+              <span style="font-size: 13px; color: #a1a1aa; font-weight: 500;">Jessica</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Credit Card Mockup -->
+        <div class="pc-perspective">
+          <div class="pc-card-inner" id="pc-card-inner">
+            <div class="pc-front">
+              <div class="pc-liquid-card">
+                <div class="pc-liquid-card-bg"></div>
+                <div class="pc-card-content">
+                  <div class="pc-row">
+                    <div class="pc-logo-chip">
+                      <div class="pc-logo-chip-inner"></div>
+                    </div>
+                    <div style="font-weight: bold; font-size: 24px;" id="pc-card-type">VISA</div>
+                  </div>
+                  <div class="pc-text-2xl" id="pc-display-number">•••• •••• •••• ••••</div>
+                  <div class="pc-row" style="align-items: flex-end;">
+                    <div>
+                      <div class="pc-text-xs">Card Holder</div>
+                      <div class="pc-text-lg uppercase" id="pc-display-name">YOUR NAME</div>
+                    </div>
+                    <div>
+                      <div class="pc-text-xs">Expires</div>
+                      <div class="pc-text-lg font-mono" id="pc-display-expiry">MM/YY</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pc-back">
+              <div class="pc-liquid-card">
+                <div class="pc-liquid-card-bg"></div>
+                <div class="pc-magnetic-strip"></div>
+                <div style="padding: 24px; padding-top: 32px;">
+                  <div class="pc-cvv-stripe" id="pc-display-cvv">•••</div>
+                  <div class="pc-text-xs" style="margin-top: 8px; text-align: right;">CVV</div>
+                </div>
+                <div
+                  style="position: absolute; bottom: 24px; right: 24px; font-weight: bold; font-size: 20px; opacity: 0.5;"
+                  id="pc-card-type-back">VISA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Standalone Submit Button -->
+        <button class="pc-btn" id="btn-transfer-next" style="margin-top: 16px;">
+          <div class="pc-btn-bg"></div>
+          Pay Now
+        </button>
+
+      </div>
+
+      <!-- View 2: Passcode Verification -->
+      <div id="transfer-view-passcode" class="hidden pc-liquid-card"
+        style="min-height: 250px; z-index: 50; transition: opacity 0.3s, transform 0.3s; transform: translateX(100%); opacity: 0; padding: 32px; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box;">
+        <h3
+          style="margin-top: 0; color: #fff; font-size: 22px; font-weight: 600; text-align: center; margin-bottom: 8px;">
+          Security Check</h3>
+        <p style="color: #a1a1aa; font-size: 14px; text-align: center; margin-bottom: 32px; line-height: 1.4;">Enter
+          your 4-digit Aurora PIN to authorize this payment.</p>
+
+        <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 32px;">
+          <input class="passcode-digit" type="password" maxlength="1"
+            style="box-sizing: border-box; width: 48px; height: 56px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 24px; text-align: center; outline: none; font-weight: 600; transition: all 0.2s;"
+            onfocus="this.style.borderColor='rgba(16, 185, 129, 0.5)'; this.style.boxShadow='0 0 0 2px rgba(16, 185, 129, 0.2)';"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)'; this.style.boxShadow='none';" />
+          <input class="passcode-digit" type="password" maxlength="1"
+            style="box-sizing: border-box; width: 48px; height: 56px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 24px; text-align: center; outline: none; font-weight: 600; transition: all 0.2s;"
+            onfocus="this.style.borderColor='rgba(16, 185, 129, 0.5)'; this.style.boxShadow='0 0 0 2px rgba(16, 185, 129, 0.2)';"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)'; this.style.boxShadow='none';" />
+          <input class="passcode-digit" type="password" maxlength="1"
+            style="box-sizing: border-box; width: 48px; height: 56px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 24px; text-align: center; outline: none; font-weight: 600; transition: all 0.2s;"
+            onfocus="this.style.borderColor='rgba(16, 185, 129, 0.5)'; this.style.boxShadow='0 0 0 2px rgba(16, 185, 129, 0.2)';"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)'; this.style.boxShadow='none';" />
+          <input class="passcode-digit" type="password" maxlength="1"
+            style="box-sizing: border-box; width: 48px; height: 56px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 24px; text-align: center; outline: none; font-weight: 600; transition: all 0.2s;"
+            onfocus="this.style.borderColor='rgba(16, 185, 129, 0.5)'; this.style.boxShadow='0 0 0 2px rgba(16, 185, 129, 0.2)';"
+            onblur="this.style.borderColor='rgba(255,255,255,0.15)'; this.style.boxShadow='none';" />
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button id="btn-passcode-back"
+            style="box-sizing: border-box; background: rgba(0,0,0,0.3); color: #a1a1aa; border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 500; width: 48px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;"
+            onmouseover="this.style.background='rgba(255,255,255,0.05)'"
+            onmouseout="this.style.background='rgba(0,0,0,0.3)'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <button id="btn-transfer-send" disabled
+            style="box-sizing: border-box; position: relative; overflow: hidden; background: transparent; color: #3f3f46; border: 0; padding: 12px 16px; border-radius: 10px; cursor: not-allowed; font-weight: 600; flex: 1; transition: transform 0.3s; transform-style: preserve-3d; opacity: 0.7;">
+            <div
+              style="position: absolute; inset: 0; border-radius: 10px; background: linear-gradient(to top, rgba(16, 185, 129, 0.5), rgba(16, 185, 129, 0.3)); border: 1px solid rgba(0,0,0,0.4); border-bottom-width: 2px; z-index: -1;">
+            </div>
+            Authorize Send
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- Premium Aurora Pay Success Overlay -->
+  <div id="transfer-success-overlay" class="hidden"
+    style="position: fixed; inset: 0; background: #050505; z-index: 20000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.4s ease; color: #fff;">
+    <div id="success-checkmark"
+      style="width: 80px; height: 80px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; margin-bottom: 32px; transform: scale(0.5); opacity: 0; transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"
+        stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+    </div>
+    <div id="success-brand"
+      style="font-size: 16px; font-weight: 600; color: #10b981; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; opacity: 0; transform: translateY(15px); transition: all 0.6s ease; transition-delay: 0.2s;">
+      AURORA Pay</div>
+    <div id="success-amount"
+      style="font-size: 64px; font-weight: 700; margin-bottom: 8px; opacity: 0; transform: translateY(15px); transition: all 0.6s ease; transition-delay: 0.3s; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;">
+      ₦0.00</div>
+    <div id="success-recipient"
+      style="font-size: 20px; color: #a1a1aa; opacity: 0; transform: translateY(15px); transition: all 0.6s ease; transition-delay: 0.4s; font-weight: 500;">
+      to @recipient</div>
+  </div>
+
+  <!-- Component Logic Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const cardNumber = document.getElementById('pc-input-number');
+      const cardName = document.getElementById('pc-input-name');
+      const cardExpiry = document.getElementById('pc-input-expiry');
+      const cardCvv = document.getElementById('pc-input-cvv');
+
+      const dispNumber = document.getElementById('pc-display-number');
+      const dispName = document.getElementById('pc-display-name');
+      const dispExpiry = document.getElementById('pc-display-expiry');
+      const dispCvv = document.getElementById('pc-display-cvv');
+
+      const cardInner = document.getElementById('pc-card-inner');
+      const cardType = document.getElementById('pc-card-type');
+      const cardTypeBack = document.getElementById('pc-card-type-back');
+
+      function updateCardType(num) {
+        const clean = num.replace(/\\s/g, '');
+        let type = "VISA";
+        if (clean.startsWith("5") || clean.startsWith("2")) type = "MASTER";
+        if (clean.startsWith("3")) type = "AMEX";
+        cardType.innerText = type;
+        cardTypeBack.innerText = type;
+      }
+
+      if (cardNumber) {
+        cardNumber.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\\s+/g, "").replace(/[^0-9]/gi, "");
+          let matches = v.match(/\\d{1,4}/g);
+          let formatted = matches ? matches.join(" ") : v;
+          e.target.value = formatted;
+          dispNumber.innerText = formatted || "•••• •••• •••• ••••";
+          updateCardType(v);
+        });
+
+        cardName.addEventListener('input', (e) => {
+          dispName.innerText = e.target.value.toUpperCase() || "YOUR NAME";
+        });
+
+        cardExpiry.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/\\s+/g, "").replace(/[^0-9]/gi, "");
+          if (v.length >= 2) {
+            v = v.substring(0, 2) + "/" + v.substring(2, 4);
+          }
+          e.target.value = v;
+          dispExpiry.innerText = v || "MM/YY";
+        });
+
+        cardCvv.addEventListener('input', (e) => {
+          let v = e.target.value.replace(/[^0-9]/g, "");
+          e.target.value = v;
+          dispCvv.innerText = v || "•••";
+        });
+
+        cardCvv.addEventListener('focus', () => cardInner.classList.add('is-flipped'));
+        cardCvv.addEventListener('blur', () => cardInner.classList.remove('is-flipped'));
+      }
+    });
+  </script>
+
+  <!-- Receive QR Modal -->
+  <div id="receive-modal" class="hidden"
+    style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(12px); opacity: 0; transition: opacity 0.3s ease;">
+    <div
+      style="background: rgba(30, 30, 36, 0.95); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); padding: 32px; border-radius: 20px; width: 320px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); transform: translateY(20px); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center;">
+      <h3 style="margin-top: 0; color: #fff; font-size: 20px; font-weight: 600; margin-bottom: 8px;">Receive Funds</h3>
+      <p style="color: #a1a1aa; font-size: 14px; text-align: center; margin-bottom: 24px;">Scan this QR code to deposit
+        directly into your Aurora Wallet.</p>
+
+      <div style="background: white; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+        <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <path d="M7 7h.01"></path>
+          <path d="M18 7h.01"></path>
+          <path d="M18 18h.01"></path>
+          <path d="M7 18h.01"></path>
+          <path d="M10 10v4"></path>
+          <path d="M10 10h4"></path>
+          <path d="M14 14v-4"></path>
+          <path d="M14 14h-4"></path>
+        </svg>
+      </div>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+        <div
+          style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; color: #10b981; font-family: monospace; font-size: 14px; text-align: center; word-break: break-all;">
+          AUR-928X-44ML-01PZ
+        </div>
+        <button
+          onclick="document.getElementById('receive-modal').style.opacity=0; setTimeout(()=>document.getElementById('receive-modal').classList.add('hidden'), 300)"
+          style="width: 100%; border-radius: 8px; padding: 12px; background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-weight: 500; transition: all 0.2s;"
+          onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+          onmouseout="this.style.background='rgba(255,255,255,0.05)'">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEV PANEL (Hidden by default) -->
+  <div id="dev-panel" class="dev-panel hidden">
+    <div class="dev-header">
+      <h3>Aurora Dev Panel</h3>
+      <button id="close-dev-panel">✕</button>
+    </div>
+    <div class="dev-body">
+      <div class="dev-section">
+        <h4>Browser State</h4>
+        <pre id="dev-json-output">Waiting for state...</pre>
+      </div>
+      <div class="dev-section">
+        <h4>Action Log</h4>
+        <div id="dev-action-log" class="dev-log-list"></div>
+      </div>
+      <div class="dev-controls">
+        <button id="dev-btn-refresh">Refresh State</button>
+        <button id="dev-btn-test-wiki">Test: Wiki Search</button>
+        <button id="dev-btn-autofill-payment" style="border-color: #10b981; color: #10b981;">Autofill Payment</button>
+        <button id="dev-btn-export">Export Logs</button>
+      </div>
+
+      <div class="dev-section"
+        style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <h4>Agent Status</h4>
+        <div id="agent-status-line" style="font-family: monospace; color: #4ade80; margin-bottom: 4px;">Idle</div>
+        <div id="agent-vision-line" style="font-family: monospace; color: #aaa;">No active vision</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Voice overlay removed, embedded in welcome page -->
+
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+  <script type="application/javascript" src="https://connect.withmono.com/connect.js"></script>
+  <script src="event-bus.js"></script>
+  <script src="input-controller.js"></script>
+  <script src="agent/memory.js"></script>
+  <script src="agent/policy-linter.js"></script>
+  <script src="agent/step-decider.js"></script>
+  <script src="agent/verifier.js"></script>
+  <script src="agent/recovery.js"></script>
+  <script src="agent/tools.js"></script>
+  <script src="agent/agent-loop.js"></script>
+  <script src="siriwave.js"></script>
+  <script src="renderer.js"></script>
+
+  <!-- SVG Liquid Glass Filter from 21st.dev Component -->
+  <svg width="0" height="0" style="position: absolute; visibility: hidden;">
+    <defs>
+      <filter id="container-glass" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.02 0.02" numOctaves="1" seed="1" result="turbulence" />
+        <feGaussianBlur in="turbulence" stdDeviation="2" result="blurredNoise" />
+        <feDisplacementMap in="SourceGraphic" in2="blurredNoise" scale="120" xChannelSelector="R" yChannelSelector="B" result="displaced" />
+        <feGaussianBlur in="displaced" stdDeviation="4" result="finalBlur" />
+        <feComposite in="finalBlur" in2="finalBlur" operator="over" />
+      </filter>
+    </defs>
+  </svg>
+
+</body>
+
+</html>
