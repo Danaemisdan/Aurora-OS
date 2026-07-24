@@ -10,6 +10,7 @@
     "dist": "electron-builder --mac"
   },
   "build": {
+    "afterPack": "scripts/afterPack.js",
     "appId": "com.aurora.os",
     "publish": {
       "provider": "github",
