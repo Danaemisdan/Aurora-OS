@@ -256,7 +256,7 @@ ipcMain.handle('atlas-llm-decide', async (event, promptText) => {
         });
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for processing larger context windows
+        const timeoutId = setTimeout(() => controller.abort(), 6000000); // 90s timeout for processing larger context windows
         
         let result;
         try {
@@ -306,7 +306,7 @@ Keep answers short unless the user asks for detail.`;
         });
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const timeoutId = setTimeout(() => controller.abort(), 600000);
 
         let outputBuffer = '';
         let prefixStripped = false;
