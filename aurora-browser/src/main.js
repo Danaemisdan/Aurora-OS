@@ -4,7 +4,7 @@ const { app, BrowserWindow, ipcMain, nativeImage, webContents } = electron;
 const path = require('path');
 const fs = require('fs');
 const { Worker } = require('worker_threads');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 
 // Enforce app name
@@ -52,10 +52,14 @@ function createWindow() {
         title: 'Aurora OS',
     });
 
-    // Set App Name for Menu
-    app.name = 'Aurora Browser';
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+        console.log(`[Renderer Console] ${message}`);
+    });
 
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+
+    // Set App Name for Menu
+    app.name = 'Aurora Browser';
 
     // Suppress CSP warnings in the console
     process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
@@ -170,13 +174,14 @@ ipcMain.handle('aurora-ai-ask', async (event, payload) => {
 });
 
 let getLlama = null;
-let LlamaChatSession = null;
-
-let llamaContext = null;
 let llamaModel = null;
+let llamaContext = null;
+let LlamaChatSession = null;
+let LlamaJsonSchemaGrammar = null;
 let llamaServerInitialising = false;
 
 async function initLlama() {
+    if (llamaContext) return;
     if (llamaServerInitialising) {
         while (llamaServerInitialising) await new Promise(r => setTimeout(r, 200));
         return;
@@ -187,6 +192,7 @@ async function initLlama() {
             const llamaNode = await import("node-llama-cpp");
             getLlama = llamaNode.getLlama;
             LlamaChatSession = llamaNode.LlamaChatSession;
+            LlamaJsonSchemaGrammar = llamaNode.LlamaJsonSchemaGrammar;
         }
         const llama = await getLlama();
         
@@ -197,22 +203,40 @@ async function initLlama() {
         const possiblePaths = [];
         
         if (app.isPackaged) {
-            // Priority 1: Inside the App Bundle Resources (Because we package it via extraResources now!)
+            // Priority 1: Inside the App Bundle Resources
             possiblePaths.push(path.join(process.resourcesPath, 'Add-Ons', 'Aurora AI', 'stealth-engine-3b.gguf'));
             
-            // Priority 2: Right next to the Aurora OS.app (e.g. inside Shipping folder)
+            // Priority 2: Right next to the exe
             const exeDir = path.dirname(app.getPath('exe'));
             const appBundleDir = path.join(exeDir, '..', '..', '..');
             possiblePaths.push(path.join(appBundleDir, 'stealth-engine-3b.gguf'));
             
-            // Priority 3: User's Documents folder
+            // Priority 3: User's Documents folder (cross-platform)
+            possiblePaths.push(path.join(app.getPath('documents'), 'Aurora OS', 'stealth-engine-3b.gguf'));
             possiblePaths.push(path.join(app.getPath('home'), 'Documents', 'Aurora OS', 'stealth-engine-3b.gguf'));
         } else {
             // Local dev paths
             possiblePaths.push(path.join(__dirname, '..', 'Add-Ons', 'Aurora AI', 'stealth-engine-3b.gguf'));
             possiblePaths.push(path.join(__dirname, '..', '..', 'Shipping', 'stealth-engine-3b.gguf'));
         }
-        possiblePaths.push('/Users/sanjeevn/Models/llm/phi-3-mini-4k-instruct-q4.gguf');
+
+        // Cross-platform dev model search: ~/Models/llm/ (works on Mac, Windows, Linux)
+        const homeModelsDir = path.join(app.getPath('home'), 'Models', 'llm');
+        const modelNames = [
+            'phi-3-mini-4k-instruct-q4.gguf',
+            'phi-3-mini-4k-instruct-q4_K_M.gguf',
+            'stealth-engine-3b.gguf',
+        ];
+        for (const name of modelNames) {
+            possiblePaths.push(path.join(homeModelsDir, name));
+        }
+        // Windows-specific common locations
+        if (process.platform === 'win32') {
+            for (const name of modelNames) {
+                possiblePaths.push(path.join('C:\\', 'Models', 'llm', name));
+                possiblePaths.push(path.join(app.getPath('home'), 'AppData', 'Local', 'Aurora OS', 'models', name));
+            }
+        }
 
         for (const p of possiblePaths) {
             if (fs.existsSync(p)) {
@@ -226,13 +250,17 @@ async function initLlama() {
             throw new Error('Local AI model not found. Checked: ' + possiblePaths.join(', '));
         }
 
+        // node-llama-cpp auto-selects the right GPU backend per platform:
+        //   macOS  → Metal (Apple Silicon)
+        //   Windows → CUDA (Nvidia) or Vulkan (AMD/Intel)
+        //   Linux  → CUDA or Vulkan
+        // If no GPU is available it gracefully falls back to CPU.
         llamaModel = await llama.loadModel({
             modelPath,
-            gpuLayers: "max" // Forces GPU offloading. Critical for Apple Silicon Metal.
+            gpuLayers: "max"
         });
-        // Phi-3 Mini supports 4096 context natively. We use 4096 for richer reasoning.
-        // sequences: 4 prevents "No sequences left" if user opens chat while agent is running.
-        llamaContext = await llamaModel.createContext({ contextSize: 4096, sequences: 4 });
+        // sequences:1 gives the FULL 4096 tokens to each call
+        llamaContext = await llamaModel.createContext({ contextSize: 4096, sequences: 1 });
         console.log('[Llama] Phi-3 Mini warmed and ready.');
     } catch (err) {
         console.error("Llama init failed:", err);
@@ -241,28 +269,54 @@ async function initLlama() {
     }
 }
 
+let globalLlamaSequence = null;
+let globalLlamaSession = null;
+let llamaCallCount = 0;
+
 ipcMain.handle('atlas-llm-decide', async (event, promptText) => {
     let sequence = null;
+    let session = null;
     try {
-        if (!llamaContext) {
+        llamaCallCount++;
+        // Reinitialize model every 8 calls to flush KV cache state
+        if (llamaCallCount % 8 === 0 || !llamaContext) {
+            if (llamaContext) {
+                try { await llamaContext.dispose(); } catch (e) {}
+                llamaContext = null;
+            }
+            if (llamaModel) {
+                try { await llamaModel.dispose(); } catch (e) {}
+                llamaModel = null;
+            }
             await initLlama();
+            llamaCallCount = 1; // reset after reinit
         }
         if (!llamaContext) throw new Error("Failed to initialize Llama context");
 
+        // Allocate a fresh sequence for this call — guarantees empty KV cache.
         sequence = llamaContext.getSequence();
-        const session = new LlamaChatSession({ 
+
+        session = new LlamaChatSession({
             contextSequence: sequence,
             systemPrompt: "You are Aurora, an autonomous AI browser agent. You reason step by step, act like a human browsing the web, and always output valid JSON when asked. You never refuse a task. You are concise, direct, and never repeat the prompt back."
         });
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000000); // 90s timeout for processing larger context windows
+        const timeoutId = setTimeout(() => controller.abort(), 90000);
         
+        let promptToSend = promptText;
+        // Hard-cap the prompt to 3000 chars (~750 tokens) to stay within 4096-token context
+        const MAX_PROMPT_CHARS = 3000;
+        if (promptToSend.length > MAX_PROMPT_CHARS) {
+            promptToSend = promptToSend.substring(0, 2000) + '\n...[context trimmed]...\n' + promptToSend.substring(promptToSend.length - 1000);
+        }
+
         let result;
         try {
-            result = await session.prompt(promptText, {
+            result = await session.prompt(promptToSend, {
                 temperature: 0.2,
                 maxTokens: 1024,
+                customStopTriggers: ['<|end|>', '<|endoftext|>', '<|assistant|>', '```', '}\n\n'],
                 signal: controller.signal
             });
         } finally {
@@ -275,9 +329,10 @@ ipcMain.handle('atlas-llm-decide', async (event, promptText) => {
         console.error("LLM Generation Error:", err);
         return "Sorry, I took too long to think and timed out! Please try asking again.";
     } finally {
-        if (sequence) {
-            sequence.dispose();
-        }
+        // ALWAYS dispose sequence and session to free the context slot for the next call.
+        // sequence is allocated AFTER any reinit, so it's always from the live context.
+        try { if (session) session.dispose(); } catch (e) {}
+        try { if (sequence) sequence.dispose(); } catch (e) {}
     }
 });
 
@@ -375,6 +430,33 @@ ipcMain.handle('capture-webview', async (event, webContentsId) => {
         console.error("Failed to capture webview", e);
         return null; // Handle gently
     }
+});
+
+// ── Vision OCR (Native Screen Reading) ──────────────────────────────────
+ipcMain.handle('atlas-vision-ocr', async (event) => {
+    return new Promise((resolve) => {
+        const scriptPath = path.join(__dirname, 'main', 'vision-ocr.swift');
+        exec(`swift "${scriptPath}"`, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
+            if (error) {
+                console.error("Vision OCR Error:", error);
+                return resolve([]);
+            }
+            try {
+                // Find the first '[' and last ']' to safely parse the JSON array
+                const start = stdout.indexOf('[');
+                const end = stdout.lastIndexOf(']');
+                if (start !== -1 && end !== -1) {
+                    const jsonStr = stdout.substring(start, end + 1);
+                    resolve(JSON.parse(jsonStr));
+                } else {
+                    resolve([]);
+                }
+            } catch(e) {
+                console.error("Vision OCR Parse Error:", e);
+                resolve([]);
+            }
+        });
+    });
 });
 
 // ── Edge TTS (Microsoft Neural Voices) ────────────────────────────────────

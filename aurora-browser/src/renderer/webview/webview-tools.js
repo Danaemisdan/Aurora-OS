@@ -4,7 +4,7 @@ const INTERACTIVE_TAGS = ['a', 'button', 'input', 'select', 'textarea', 'details
 
 function findElementById(id) {
     if (id === null || id === undefined) return null;
-    return document.querySelector(`[data-atlas-id="${id}"]`);
+    return document.querySelector(`[data-op-id="${id}"]`);
 }
 
 function webviewNavigate(url) {
@@ -27,9 +27,13 @@ function webviewClick(id) {
     }
 
     el.focus();
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, view: window }));
     el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, view: window }));
     el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
-    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    
+    // Call native click which is sometimes trusted more than synthetic mouse events
+    el.click();
 
     return `clicked element ID ${id}`;
 }
@@ -44,11 +48,19 @@ function webviewType(id, valueToType, clearFirst = true) {
         el.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
-    // Use native value setter to work with React-controlled inputs
-    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set ||
-                         Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+    let nativeSetter = null;
+    if (el.tagName === 'TEXTAREA') {
+        nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+    } else {
+        nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    }
+
     if (nativeSetter) {
-        nativeSetter.call(el, valueToType);
+        try {
+            nativeSetter.call(el, valueToType);
+        } catch (err) {
+            el.value = valueToType;
+        }
     } else {
         el.value = valueToType;
     }
@@ -56,22 +68,21 @@ function webviewType(id, valueToType, clearFirst = true) {
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
     
-    // Auto-submit if it's a search input
-    if (el.tagName === 'INPUT' && (el.type === 'search' || el.id.includes('search') || el.name.includes('q'))) {
-        if (el.form) el.form.requestSubmit();
-        else el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 13, bubbles: true }));
+    // Auto-submit if it's a search input (or Google's textarea)
+    if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && (el.type === 'search' || el.id.includes('search') || el.name.includes('q') || el.name === 'search')) {
+        webviewPress('Enter');
     }
     
     return `typed "${valueToType}" into element ID ${id}`;
 }
 
 function webviewPress(key) {
-    // If an element is active, dispatch keydown to it
     const active = document.activeElement || document.body;
-    active.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-    active.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+    active.dispatchEvent(new KeyboardEvent('keydown', { key, keyCode: key === 'Enter' ? 13 : 0, bubbles: true }));
+    active.dispatchEvent(new KeyboardEvent('keypress', { key, keyCode: key === 'Enter' ? 13 : 0, bubbles: true }));
+    active.dispatchEvent(new KeyboardEvent('keyup', { key, keyCode: key === 'Enter' ? 13 : 0, bubbles: true }));
     if (key === 'Enter') {
-        if (active.tagName === 'INPUT' && active.form) {
+        if ((active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && active.form) {
             active.form.requestSubmit();
         } else {
             active.click();

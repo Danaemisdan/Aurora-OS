@@ -7,7 +7,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --enable-logging",
-    "dist": "electron-builder --mac"
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
+    "dist": "electron-builder --mac --win"
   },
   "build": {
     "appId": "com.aurora.os",
@@ -26,12 +29,16 @@
       "identity": null
     },
     "win": {
-      "target": ["nsis"],
-      "icon": "build/icon.png"
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico",
+      "artifactName": "Aurora-OS-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aurora OS"
     },
     "dmg": {
       "title": "Aurora OS",

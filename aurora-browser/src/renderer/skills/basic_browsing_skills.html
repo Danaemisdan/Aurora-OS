@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Browsing Skills</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f13;
+            color: #f1f1f4;
+            line-height: 1.6;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4da6ff;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #a370f7;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .skill-card {
+            background-color: #1c1c24;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2d2d3b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .skill-title {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #ffffff;
+            margin-bottom: 10px;
+        }
+        .skill-description {
+            color: #b0b0c0;
+        }
+        code {
+            background-color: #2a2a36;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ff7b72;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Aurora Knowledge Base: Basic Browsing Skills</h1>
+    <p>This document serves as the foundational knowledge base for Aurora AI. It contains critical rules for interacting with modern Single Page Applications (SPAs) and standard web interfaces like a human being.</p>
+
+    <h2>1. Search Bars & Forms</h2>
+    
+    <div class="skill-card">
+        <div class="skill-title">The "Enter" Key Rule</div>
+        <div class="skill-description">
+            When typing a query into a search bar (like on Google, Amazon, or YouTube), you must almost always press <code>Enter</code> to actually submit the search. Simply typing the text is not enough. If your last action was <code>type</code> into a search bar, your immediate next action should be <code>press Enter</code>.
+        </div>
+    </div>
+
+    <div class="skill-card">
+        <div class="skill-title">Google's Modern Search Bar</div>
+        <div class="skill-description">
+            Google's homepage search bar is no longer a standard <code>&lt;input&gt;</code> element; it is a <code>&lt;textarea&gt;</code>. You can interact with it exactly the same way, by typing your query and pressing <code>Enter</code>.
+        </div>
+    </div>
+
+    <h2>2. Popups, Modals & Banners</h2>
+
+    <div class="skill-card">
+        <div class="skill-title">Cookie Banners & Overlays</div>
+        <div class="skill-description">
+            Modern websites often block interactions with the main page using cookie consent banners, newsletter popups, or login walls. If a modal or popup is active, <strong>always prioritize dismissing it</strong> (e.g., clicking "Accept All", "Decline", or the "X" close button) before attempting to interact with the content behind it.
+        </div>
+    </div>
+
+    <h2>3. Navigation & Waiting</h2>
+
+    <div class="skill-card">
+        <div class="skill-title">Anti-Looping: Patience is Key</div>
+        <div class="skill-description">
+            If you click a button or link, give the page a moment to load or transition. Do NOT repeatedly click the same button if nothing visually changes immediately. Modern SPAs may take a second to fetch data in the background.
+        </div>
+    </div>
+
+    <div class="skill-card">
+        <div class="skill-title">Recognizing Clickable Elements</div>
+        <div class="skill-description">
+            Not all links look like blue text. Buttons can be icons (like a magnifying glass for search, or three horizontal lines for a menu). Pay attention to elements marked as <code>[role="button"]</code> or <code>[role="link"]</code> in the DOM tree, even if they lack obvious text.
+        </div>
+    </div>
+
+    <h2>4. State Observation</h2>
+
+    <div class="skill-card">
+        <div class="skill-title">Strict Goal Verification</div>
+        <div class="skill-description">
+            Never assume a goal is complete just because you executed an action. For example, if your goal is to "find hotels", and you type "hotels" into the search bar, the goal is NOT achieved until you press Enter and actually see the hotel listings appear on the screen. Verify the visual state, not just your own actions.
+        </div>
+    </div>
+
+</body>
+</html>

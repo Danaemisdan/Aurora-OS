@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('aurora', {
     maximize: () => ipcRenderer.invoke('window-maximize'),
     close: () => ipcRenderer.invoke('window-close'),
     aiAsk: (prompt) => ipcRenderer.invoke('aurora-ai-ask', prompt),
-    atlasLlmDecide: (prompt) => ipcRenderer.invoke('atlas-llm-decide', prompt),
+    atlasLlmDecide: (prompt, options) => ipcRenderer.invoke('atlas-llm-decide', prompt, options),
     captureWebview: (id) => ipcRenderer.invoke('capture-webview', id),
     sendChatStream: (prompt) => {
         // Clear all previous listeners before each new chat to prevent accumulation

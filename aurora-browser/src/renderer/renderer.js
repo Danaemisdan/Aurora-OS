@@ -3625,6 +3625,11 @@ function submitAiPrompt(valueOverride = '') {
     }
 
     // --- AGENT mode: browser task ---
+    const aiChatHistory = document.getElementById('ai-chat-history');
+    if (aiChatHistory) aiChatHistory.classList.add('hidden');
+    if (aiEmptyState) aiEmptyState.classList.add('hidden');
+    if (aiLog) aiLog.classList.remove('hidden');
+
     if (!agentLoop) {
         appendAiMetaLine("Agent system failed to initialize. Check dev console.", "error");
         return;
@@ -4889,22 +4894,22 @@ async function agentExtractTopLinks(wv, maxLinks = 4) {
                 const state = window.__atlas.getState();
                 const seen = new Set();
                 const SKIP_DOMAINS = ['google.com', 'google.co', '.google.', 'youtube.com'];
-                const links = state.interactive_elements
-                    .filter(el => el.url && el.url.startsWith('http') && el.name && el.name.length > 3)
+                const links = (state.interactiveElements || [])
+                    .filter(el => el.href && el.href.startsWith('http') && el.text && el.text.length > 3)
                     .filter(el => {
                         try {
-                            const host = new URL(el.url).hostname;
+                            const host = new URL(el.href).hostname;
                             // Aggressive filter for google domains (e.g. google.co.in, store.google.com)
                             return !SKIP_DOMAINS.some(d => host.includes(d));
                         } catch(e) { return false; }
                     })
                     .filter(el => {
-                        if (seen.has(el.url)) return false;
-                        seen.add(el.url);
+                        if (seen.has(el.href)) return false;
+                        seen.add(el.href);
                         return true;
                     })
                     .slice(0, ${maxLinks})
-                    .map(el => ({ url: el.url, name: el.name }));
+                    .map(el => ({ url: el.href, name: el.text }));
                 return JSON.stringify(links);
             })()
         `);
@@ -5309,11 +5314,49 @@ window.openDockAiMode = function(query) {
         dockInput.value = query;
     }
     
-    if (window.aurora && window.aurora.atlasLlmDecide) {
-        runAgentLoop(query, 0);
-    } else {
-        showAiResponse(`You searched for "${query}". I am a mock AI overview since the backend is currently unavailable.`);
+    if (!agentLoop) {
+        showAiResponse("Agent system not initialized.", true);
+        return;
     }
+    
+    const activeTabObj = tabs.find((t) => t.id === activeTabId);
+    if (!activeTabObj) {
+        showAiResponse("No active browser tab found.");
+        return;
+    }
+    
+    const webviewEl = document.querySelector(`webview[data-id="${activeTabId}"]`);
+    if (!webviewEl) {
+        showAiResponse("Webview not found.");
+        return;
+    }
+
+    // Initialize agent loop with callbacks pointing to the dock popup
+    agentLoop.init(webviewEl, {
+        onStepStart: (stepStr) => {
+            showAiResponse(`Step: ${stepStr}`);
+        },
+        onLog: (msg) => {
+            showAiResponse(`Thinking: ${msg}`);
+        },
+        onStateChange: (stateStr) => {
+            showAiResponse(stateStr);
+        },
+        onDone: (success, resultMsg) => {
+            showAiResponse(resultMsg || "Task completed.");
+            setAgentActive(false);
+        },
+        onNeedUser: (msg) => {
+            showAiResponse(`Need input: ${msg}`);
+            setAgentActive(false);
+        },
+        onError: (errStr) => {
+            showAiResponse(`Error: ${errStr}`, true);
+            setAgentActive(false);
+        }
+    });
+
+    agentLoop.start(query);
 };
 
 window.closeDockAiMode = function() {

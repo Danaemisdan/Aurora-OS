@@ -35,6 +35,38 @@ try {
     };
 }
 
+// POP-UP DOM OBSERVER
+let popupTimeout = null;
+const observer = new MutationObserver((mutations) => {
+    let popupDetected = false;
+    for (const m of mutations) {
+        for (const node of m.addedNodes) {
+            if (node.nodeType === 1) { // Element
+                const tag = node.tagName.toLowerCase();
+                const role = node.getAttribute('role');
+                const cls = node.className || '';
+                if (tag === 'dialog' || role === 'dialog' || role === 'alertdialog' || 
+                    (typeof cls === 'string' && (cls.includes('modal') || cls.includes('popup') || cls.includes('overlay')))) {
+                    popupDetected = true;
+                    break;
+                }
+            }
+        }
+        if (popupDetected) break;
+    }
+    
+    if (popupDetected) {
+        clearTimeout(popupTimeout);
+        popupTimeout = setTimeout(() => {
+            ipcRenderer.sendToHost('atlas-dom-changed', { type: 'popup_opened' });
+        }, 500);
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    observer.observe(document.body, { childList: true, subtree: true });
+});
+
 // Also listen to IPC messages just in case mapping needs it directly
 ipcRenderer.on('atlas-action', (event, action, args, reqId) => {
     try {
@@ -42,14 +74,14 @@ ipcRenderer.on('atlas-action', (event, action, args, reqId) => {
         if (action === 'getState') result = getStateSnapshot();
         else if (action === 'navigate') result = tools.webviewNavigate(args.url);
         else if (action === 'click') {
-            // If LLM passes a url instead of text, treat as navigate
-            if (!args.text && args.url) result = tools.webviewNavigate(args.url);
-            else result = tools.webviewClick(args.text);
+            // If LLM passes a url instead of an ID, treat as navigate
+            if (!args.id && !args.text && args.url) result = tools.webviewNavigate(args.url);
+            else result = tools.webviewClick(args.id || args.text);
         }
         else if (action === 'type') {
-            const target = args.field_name || args.field || args.text;
+            const target = args.id || args.field_name || args.field || args.text;
             const textToType = args.value || (args.text !== target ? args.text : null);
-            if (!target || !textToType) throw new Error("type tool requires both a target field name and a value to type.");
+            if (!target || !textToType) throw new Error("type tool requires both a target ID and a value to type.");
             result = tools.webviewType(target, textToType, args.clearFirst);
         }
         else if (action === 'press') result = tools.webviewPress(args.key);

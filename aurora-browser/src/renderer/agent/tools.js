@@ -24,7 +24,30 @@ async function getWebviewState(webviewEl) {
 
 async function executeAction(action, webviewEl) {
     if (!action) return null;
+
+    if (action.tool === 'extract_vision') {
+        const { ipcRenderer } = require('electron');
+        const visionResults = await ipcRenderer.invoke('atlas-vision-ocr');
+        // Return a stringified summary of the vision results
+        if (!visionResults || visionResults.length === 0) return "No text found on screen via Vision OCR.";
+        return "Vision OCR detected text:\n" + visionResults.map(r => `- "${r.text}" at x:${Math.round(r.bounds.x)}, y:${Math.round(r.bounds.y)}`).join('\n');
+    }
+
     return new Promise((resolve) => {
+        if (action.tool === 'navigate') {
+            try {
+                let url = action.args.url;
+                if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+                console.log("NAVIGATING TO:", url);
+                webviewEl.src = url;
+                resolve("navigating...");
+            } catch(e) {
+                console.error("NAVIGATION ERROR:", e);
+                resolve("Error: " + e.message);
+            }
+            return;
+        }
+
         const reqId = Date.now().toString() + Math.random();
 
         const timeout = setTimeout(() => {
