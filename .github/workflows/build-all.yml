@@ -1,0 +1,110 @@
+name: Build Aurora OS (Mac + Windows)
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  # macOS — signed + notarized DMG
+  # ─────────────────────────────────────────────────────────
+  build-mac:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: aurora-browser/package-lock.json
+
+      - name: Install dependencies
+        working-directory: aurora-browser
+        run: npm install
+
+      - name: Import Developer ID Certificate
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MAC_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+        run: |
+          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          rm certificate.p12
+
+      - name: Build macOS DMG
+        working-directory: aurora-browser
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist:mac
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aurora-OS-macOS
+          path: |
+            aurora-browser/dist/*.dmg
+            aurora-browser/dist/*.zip
+          retention-days: 30
+
+      - name: Upload to GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: aurora-browser/dist/*.dmg
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────────────────────
+  # Windows — NSIS installer EXE
+  # ─────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: aurora-browser/package-lock.json
+
+      - name: Install dependencies
+        working-directory: aurora-browser
+        run: npm install
+
+      - name: Build Windows installer
+        working-directory: aurora-browser
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run dist:win
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aurora-OS-Windows
+          path: |
+            aurora-browser/dist/*.exe
+            aurora-browser/dist/*.yml
+          retention-days: 30
+
+      - name: Upload to GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: aurora-browser/dist/*.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
