@@ -25,6 +25,7 @@ STEP RULES:
   Example — goal "how do I use blender": steps = ["navigate to 'https://www.google.com/search?q=how+to+use+blender'", "read and report the search results"]
   CRITICAL: For ANY "how to", "what is", "how do I", "why does", "where is" question — ALWAYS use google.com/search. NEVER navigate directly to a website like blender.org.
 - CRITICAL: If the user wants to open a famous website (e.g. youtube, netflix, facebook), you MUST include the '.com' in the URL (e.g. 'https://www.youtube.com'). Do not just say 'navigate to youtube'.
+- CRITICAL: If the user simply asks to "open" or "go to" a website (like "open youtube"), generate EXACTLY ONE step: 'navigate to <url>'. Do NOT add steps to click search buttons or anything else on the page.
 - If the user's goal is VAGUE or INCOMPLETE (e.g. "find me shoes" without budget/type, "book a flight" without dates), ask clarifying questions BEFORE searching. Do NOT search immediately.
 - If you see relevant buttons or inputs in the DOM Hierarchy, mention them in your steps.
 
@@ -70,6 +71,11 @@ Output ONLY JSON:`;
 
   static parseSteps(obj, goal) {
     let steps = Array.isArray(obj.steps) ? obj.steps.filter(s => typeof s === 'string') : [];
+    if (steps.length === 0) steps = [goal];
+
+    // Remove junk steps the model loves to hallucinate
+    const JUNK_STEP = /^(wait|wait for|loading|let the page|page to load|confirm|verify|check if)/i;
+    steps = steps.filter(s => !JUNK_STEP.test(s.trim()));
     if (steps.length === 0) steps = [goal];
 
     let questions = Array.isArray(obj.questions) ? obj.questions.filter(q => typeof q === 'string') : [];

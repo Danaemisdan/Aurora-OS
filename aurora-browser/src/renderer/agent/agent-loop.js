@@ -199,7 +199,21 @@ class AgentLoop {
       const classification = window.IntentClassifier.classify(userGoal);
       this.onLog(`\uD83C\uDFAF Intent classified as: ${classification.intent}`);
       if (classification.intent === 'chat') {
-        this.onNeedUser(`Hi! I can search the web for you. Try: "find me shoes under \u20B92000", "what's the weather?", or "iPhone 17 pro price".`);
+        this.onNeedUser(`Hi! I can help you search the web or answer questions. Try: "what is 1+0", "weather today", or "open youtube".`);
+        this.running = false;
+        return;
+      }
+
+      // DIRECT ANSWER: LLM answers without touching the browser
+      if (classification.intent === 'direct_answer') {
+        this.onLog(`💡 Answering directly from knowledge...`);
+        try {
+          const prompt = `You are Aurora, a helpful AI assistant. Answer the following question directly and concisely. Do NOT say "I cannot browse the web". Just answer it from your knowledge.\n\nQuestion: ${effectiveGoal}\n\nAnswer:`;
+          const answer = await window.aurora.atlasLlmDecide(prompt);
+          this.onNeedUser(answer.trim());
+        } catch(e) {
+          this.onNeedUser(`Sorry, I couldn't compute that: ${e.message}`);
+        }
         this.running = false;
         return;
       }
@@ -408,6 +422,13 @@ class AgentLoop {
              return;
           }
 
+          // Treat 'wait' as a no-op so we don't loop forever on hallucinated wait steps
+          if (action.tool === 'wait' || !action.tool) {
+            this.onLog(`⏭️ Skipping wait action.`);
+            actionAttempts++;
+            continue;
+          }
+
           let actionResult = "Action executed";
           try {
               actionResult = await executeAction(action, this.webviewEl);
@@ -453,9 +474,14 @@ class AgentLoop {
             break;
           }
 
-          // Navigate success: always mark step done (fixed: was checking pre-action URL)
-          if (action.tool === 'navigate' && observation.action_succeeded) {
-              observation.goal_achieved = true;
+          // Navigate success: always mark step done immediately — no more observing
+          if (action.tool === 'navigate') {
+            if (observation.action_succeeded || (state.url && state.url !== 'about:blank')) {
+              this.onLog(`✅ Navigation complete.`);
+              stepSuccess = true;
+              actionAttempts++;
+              continue;
+            }
           }
 
           // If we're on a search results page, step is done
@@ -491,11 +517,20 @@ class AgentLoop {
 
       this.onLog(`✅ Task complete.`);
 
-      // Final answer: extract real structured content from the webview DOM
+      // Final answer: only report scraped content for search/research tasks
+      // For simple navigation (open X, go to X), just finish cleanly
       try {
         const finalState = await this.getState();
         const finalUrl = (finalState.url || '');
-        if (finalUrl && !finalUrl.includes('about:blank') && !finalUrl.includes('newtab')) {
+        
+        const goalLower = userGoal.toLowerCase().trim();
+        const isSimpleNav = /^(open|go to|navigate to|visit|launch)\s+\S+$/i.test(goalLower);
+        
+        if (isSimpleNav || finalUrl.includes('about:blank') || finalUrl.includes('newtab')) {
+          // Simple navigation task — say done, don't dump page content
+          this.onNeedUser(`Done! I've opened ${finalUrl.replace(/^https?:\/\/(www\.)?/,'').split('/')[0]} for you.`);
+        } else {
+          // Search/research task — scrape and report
           const scraped = await this.scrapePageContent(userGoal);
           if (scraped && scraped.products && scraped.products.length > 0) {
             const JUNK = /^(view|see all|see more|more options|load more|map|image|photo|scroll|close|expand|book|check)/i;
@@ -513,17 +548,15 @@ class AgentLoop {
               const list = unique.slice(0, 5).map((p, i) =>
                 `${i === 0 ? '⭐' : `${i + 1}.`} ${p.title} — ${p.price}`).join('\n');
               this.onNeedUser(`Here are the best results I found:\n\n${list}\n\nI've picked ⭐ ${unique[0].title} as the top choice (best price). Want me to open a different one?`);
+            } else if (scraped && scraped.text && scraped.text.length > 20) {
+              this.onNeedUser(`Here's what I found:\n\n${scraped.text.substring(0, 1200)}`);
             } else {
-              const snippets = (finalState.text_snippets || []).slice(0, 4).join('\n');
-              if (snippets) this.onNeedUser(`Here's what I found:\n\n${snippets}`);
-              else this.onNeedUser(`I've opened the results for you: ${finalUrl}`);
+              this.onNeedUser(`Done! Opened ${finalUrl}`);
             }
           } else if (scraped && scraped.text && scraped.text.length > 20) {
             this.onNeedUser(`Here's what I found:\n\n${scraped.text.substring(0, 1200)}`);
           } else {
-            const snippets = (finalState.text_snippets || []).slice(0, 4).join('\n');
-            if (snippets) this.onNeedUser(`Here's what I found:\n\n${snippets}`);
-            else this.onNeedUser(`I've opened the results for you: ${finalUrl}`);
+            this.onNeedUser(`Done! Opened ${finalUrl}`);
           }
         }
       } catch (e) { /* silent */ }

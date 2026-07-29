@@ -25,8 +25,7 @@
         "zip"
       ],
       "icon": "build/icon.png",
-      "category": "public.app-category.productivity",
-      "identity": null
+      "category": "public.app-category.productivity"
     },
     "win": {
       "target": ["nsis", "portable"],
@@ -41,8 +40,7 @@
       "shortcutName": "Aurora OS"
     },
     "dmg": {
-      "title": "Aurora OS",
-      "sign": false
+      "title": "Aurora OS"
     },
     "asar": true,
     "directories": {

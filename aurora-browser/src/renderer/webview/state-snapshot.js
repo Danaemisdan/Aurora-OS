@@ -39,19 +39,9 @@ function isVisible(node, rect) {
 
 function getStateSnapshot() {
   try {
-    let overlayContainer = document.getElementById('op-mapper-container');
-    if (!overlayContainer) {
-      overlayContainer = document.createElement('div');
-      overlayContainer.id = 'op-mapper-container';
-      overlayContainer.style.position = 'absolute';
-      overlayContainer.style.top = '0';
-      overlayContainer.style.left = '0';
-      overlayContainer.style.width = '100%';
-      overlayContainer.style.height = '100%';
-      overlayContainer.style.pointerEvents = 'none';
-      overlayContainer.style.zIndex = '2147483647';
-      document.documentElement.appendChild(overlayContainer);
-    }
+    // Remove any leftover overlay from previous runs
+    const oldOverlay = document.getElementById('op-mapper-container');
+    if (oldOverlay) oldOverlay.remove();
 
     const allNodes = document.querySelectorAll('body *');
     let candidates = [];
@@ -182,10 +172,6 @@ function getStateSnapshot() {
     const elements = [];
     let counters = { BTN: 0, INP: 0, LNK: 0, IMG: 0, VID: 0, TXT: 0, ELM: 0 };
     
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    const fragment = document.createDocumentFragment();
-    
     filteredPass2.forEach(c => {
     try {
       counters[c.prefix]++;
@@ -195,43 +181,11 @@ function getStateSnapshot() {
       
       try { node.setAttribute('data-op-id', id); } catch(_) {}
       
-      // Create Bounding Box
-      const box = document.createElement('div');
-      box.className = 'op-bounding-box';
-      box.style.position = 'absolute';
-      box.style.top = `${rect.top + scrollTop}px`;
-      box.style.left = `${rect.left + scrollLeft}px`;
-      box.style.width = `${rect.width}px`;
-      box.style.height = `${rect.height}px`;
-      box.style.border = '2px dashed rgba(59, 130, 246, 0.8)';
-      box.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
-      box.style.pointerEvents = 'none';
-      box.style.zIndex = '2147483646';
-      fragment.appendChild(box);
-      
-      // Label Extraction
+      // Label Extraction (no visual overlays — debug labels removed)
       const ariaLbl = String(node.getAttribute('aria-label') || node.getAttribute('aria-labelledby') || '');
       const titleLbl = String(node.getAttribute('title') || node.getAttribute('data-tooltip') || '');
       const innerTxt = String(node.innerText || '').trim().replace(/\n/g,' ').replace(/\s+/g,' ').substring(0, 80);
       let text = String(ariaLbl || titleLbl || innerTxt || node.getAttribute('placeholder') || node.alt || '').trim();
-
-      const label = document.createElement('div');
-      label.className = 'op-text-label';
-      const displayTxt = text ? text.substring(0, 20) + (text.length > 20 ? '...' : '') : '';
-      label.innerText = `${id} ${displayTxt}`;
-      label.style.position = 'absolute';
-      label.style.background = 'rgba(59, 130, 246, 0.9)';
-      label.style.color = 'white';
-      label.style.fontSize = '10px';
-      label.style.fontWeight = '500';
-      label.style.padding = '1px 3px';
-      label.style.borderRadius = '3px';
-      label.style.pointerEvents = 'none';
-      label.style.whiteSpace = 'nowrap';
-      label.style.top = `${Math.max(0, rect.top + scrollTop - 16)}px`;
-      label.style.left = `${Math.max(0, rect.left + scrollLeft - 2)}px`;
-      label.style.zIndex = '2147483647';
-      fragment.appendChild(label);
       
       let parent = node.parentElement;
       let parentContext = '';
@@ -326,10 +280,10 @@ function getStateSnapshot() {
     } catch (loopErr) {
       console.warn("Error processing element:", loopErr);
     }
-  });
+    });
 
-    overlayContainer.replaceChildren();
-    overlayContainer.appendChild(fragment);
+
+    // No overlay rendering — debug labels disabled
 
     const elementsByParent = {};
     elements.forEach(e => {

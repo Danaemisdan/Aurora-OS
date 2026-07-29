@@ -4601,13 +4601,9 @@ window.openVoiceOverlay = openVoiceOverlay;
                     } else {
                         if (typeof navigateToUrl === 'function') navigateToUrl(finalUrl, query);
                     }
-                    
-                    // Transition Dock and Trigger AI
-                    if (typeof window.openDockAiMode === 'function') {
-                        window.openDockAiMode(query);
-                    }
+                    // Removed: Transition Dock and Trigger AI (per user request: big search box is normal search only)
                 } catch(err) {
-                    console.error("AI Search Error", err);
+                    console.error("Search Error", err);
                 }
 
             }
