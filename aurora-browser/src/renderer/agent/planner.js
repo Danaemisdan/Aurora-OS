@@ -24,6 +24,7 @@ STEP RULES:
   Example — goal "what is the weather": steps = ["navigate to 'https://www.google.com/search?q=weather+today'", "read and report the search results"]
   Example — goal "how do I use blender": steps = ["navigate to 'https://www.google.com/search?q=how+to+use+blender'", "read and report the search results"]
   CRITICAL: For ANY "how to", "what is", "how do I", "why does", "where is" question — ALWAYS use google.com/search. NEVER navigate directly to a website like blender.org.
+- CRITICAL: If the user wants to open a famous website (e.g. youtube, netflix, facebook), you MUST include the '.com' in the URL (e.g. 'https://www.youtube.com'). Do not just say 'navigate to youtube'.
 - If the user's goal is VAGUE or INCOMPLETE (e.g. "find me shoes" without budget/type, "book a flight" without dates), ask clarifying questions BEFORE searching. Do NOT search immediately.
 - If you see relevant buttons or inputs in the DOM Hierarchy, mention them in your steps.
 

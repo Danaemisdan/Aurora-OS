@@ -36,7 +36,11 @@ async function executeAction(action, webviewEl) {
     return new Promise((resolve) => {
         if (action.tool === 'navigate') {
             try {
-                let url = action.args.url;
+                let url = (action.args.url || '').trim();
+                // Fix missing .com for single words like "youtube" (ignore localhost)
+                if (!url.includes('.') && !url.startsWith('localhost')) {
+                    url += '.com';
+                }
                 if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
                 console.log("NAVIGATING TO:", url);
                 webviewEl.src = url;
