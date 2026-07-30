@@ -57,6 +57,7 @@ jobs:
           path: |
             aurora-browser/dist/*.dmg
             aurora-browser/dist/*.zip
+            aurora-browser/dist/*.yml
           retention-days: 30
 
       - name: Upload to GitHub Release (on tag)
